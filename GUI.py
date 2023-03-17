@@ -247,9 +247,6 @@ def delete_res(id_entry, frame, list):
             id = frame.create_Label(results[11],i,1)
             list.append(res)
             list.append(id)
-            # for j in range(len(results)):
-            #     e = frame.create_Label(results[j], i, j+2)
-            #     list.append(e)
             i += 1
         conn.commit()
         conn.close()
