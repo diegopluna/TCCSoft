@@ -11,26 +11,6 @@ def res_db_wdw():
 
     res_frame.create_Label('Nome do Vaso', 0, 0)
 
-    res_frame.create_Label('Diâmetro Interno', 0, 1)
-
-    res_frame.create_Label('Pressão de Projeto', 0, 2)
-
-    res_frame.create_Label('Eficiência de Junta', 0, 3)
-
-    res_frame.create_Label('Tipo de Casco', 0, 4)
-
-    res_frame.create_Label('Material do Casco', 0, 5)
-
-    res_frame.create_Label('Tipo de Tampo', 0, 6)
-
-    res_frame.create_Label('Material do Tampo', 0, 7)
-
-    res_frame.create_Label('Ângulo de Cone', 0, 8)
-
-    res_frame.create_Label('Espessura mínima do Casco', 0, 9)
-
-    res_frame.create_Label('Espessura mínima do Tampo', 0, 10)
-
     res_frame.create_Label('ID', 0, 11)
 
     i = 1
@@ -43,9 +23,10 @@ def res_db_wdw():
     conn.close()
 
     for results in records:
-        for j in range(len(results)):
-            res = res_frame.create_Label(results[j], i, j)
-            res_list.append(res)
+        res = res_frame.create_Label(results[0],i,0)
+        id = res_frame.create_Label(results[11],i,1)
+        res_list.append(res)
+        res_list.append(id)
         i += 1
 
     res_db.create_Label("ID:", 10, 0)

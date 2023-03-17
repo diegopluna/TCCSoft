@@ -242,9 +242,11 @@ def delete_res(id_entry, frame, list):
         i = 1
         clearGrid(list)
         for results in records:
-            for j in range(len(results)):
-                e = frame.create_Label(results[j], i, j+2)
-                list.append(e)
+
+            res = frame.create_Label(results[0],i,0)
+            id = frame.create_Label(results[11],i,1)
+            list.append(res)
+            list.append(id)
             i += 1
         conn.commit()
         conn.close()
