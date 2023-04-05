@@ -187,7 +187,12 @@ def calculate(pre, weld_eff, diam, shell_mat, head_mat, head, head_height, root,
     Total_weight = Mat_weight + Fluid_weight
     Q =Total_weight/2
     b=float(saddle_width.get())
-    S2=((K2*Q)/(R*shell_thick))*((Ls-2*A)/(L + Hint*4/3))
+
+    S2=((K2*Q)/(R*shell_thick))*((Ls-2*A)/(L + Hint*4/3)) # TENSÃO DE CISALHAMENTO TANGENCIAL
+    
+
+
+
     if S2 > 0.8*S:
         messagebox.showinfo("Erro","Tensão do suporte excede os limites impostos")
         return
