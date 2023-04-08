@@ -1,5 +1,7 @@
 import math
-
+from GUI2 import *
+from tkinter import messagebox
+from create_pdf import create_pdf
 
 # Calculo espessura do casco
 
@@ -50,13 +52,22 @@ def conical_head(H,D,P,S,E):
     con_t = (P*D)/(2*cos_alpha(S*E - 0.6*P))
     return con_t
 
-##Tampo toroconico Não usar por enquanto
-### def toroconical_head():
-####     Di = 
+#Tampo toroconico
+def toroconical_head(Di, D, H, P, S, E):
+    Ri = Di/2
+    R = D/2
+    alpha = math.atan(H/(R-Ri))
+    deg_alpha = (alpha*180)/math.pi
+    if deg_alpha > 30:
+        raise ValueError("Ângulo de cone superior a 30 graus")
+    L = Di/(2*math.cos(alpha))
+    toro_t = (P*L)/(S*E - 0.6*P)
+    return toro_t
 
 #Suportes
-def head_weight(h_type,D,head_t,fluid_den, fluid_level, mat_den, H):
+def head_weight(h_type,D, Di, head_t,fluid_den, fluid_level, mat_den, H):
     R = D/2
+    Ri = Di/2
     if h_type == 1:
         inside_head_v = (math.pi * pow(D,3))/12
         outside_head_v = (math.pi * pow(D+2*head_t,3))/12
@@ -69,6 +80,9 @@ def head_weight(h_type,D,head_t,fluid_den, fluid_level, mat_den, H):
     elif h_type == 4:
         inside_head_v = 2*(math.pi *R*R*H)/3
         outside_head_v = 2*(math.pi *pow(R+head_t,2)*(H+head_t))/3
+    elif h_type == 5:
+        inside_head_v = 2*(math.pi*H/3)*(math.pow(R,2)+ R*Ri + math.pow(Ri,2))
+        outside_head_v = 2*(math.pi*(H+head_t)/3)*(math.pow(R+head_t,2) + (R+head_t)*(Ri+head_t) + math.pow(Ri+head_t,2))
     fluid_w = fluid_den * inside_head_v * fluid_level
     mat_w = (outside_head_v - inside_head_v) * mat_den
     head_w = fluid_w + mat_w
@@ -89,21 +103,138 @@ def shell_weight(R, L,shell_t,mat_den,fluid_den,fluid_level):
 
 
 
-def calculate(P,S,L,E,D,h_type,Sh,H,Dh):
+def calculate(root, list_of_res, name, D, L, P, UF, Cor, E, shell_mat, h_type, H, Di, head_mat, fluid, fluid_level):
+
+    clearGrid(list_of_res)
+    data_in = [["Característica", "Valor", "Unidade", "Observação" ]]
+    if not check_str_field(name, "Nome do projeto"):
+        return
+
+    if not check_float_field(D, "Diâmetro Interno"):
+        return
+    data_in.append(["Diâmetro Interno", f"{D.get()}", "mm", "-"])
+
+    if not check_float_field(L, "Comprimento do casco"):
+        return
+    data_in.append(["Comprimento do casco", f"{L.get()}", "mm", "-"])
+
+    if not check_float_field(P, "Pressão de projeto"):
+        return
+    data_in.append(["Pressão de Projeto", f"{P.get()}", "MPa", "-"])
+
+    if not check_int_field(UF, "Vida útil do vaso"):
+        return
+    data_in.append(["Vida útil do vaso", f"{UF.get()}", "Anos", "-"])
+
+    if Cor.get():
+        if not check_float_field(Cor, "Sobreespessura de corrosão"):
+            return
+        data_in.append(["Sobreespessura de corrosão", f"{Cor.get()}", "mm", "Especificado pelo usuário"])
+    
+    if not check_float_field(E, "Eficiência de junta"):
+        return
+    data_in.append(["Eficiência de Junta", f"{E.get()}", "-", "-"])
+
+    if not check_mat_field(shell_mat, "Material do casco"):
+        return
+    data_in.append(["Material do casco", shell_mat.get(), "-", "-" ])
+
+    if h_type.get() == 1:
+        data_in.append(["Tipo de tampo", "Elipsóidal 2:1", "-", "-"])
+        data_in.append(
+            ["Altura do tampo", f"{int(D.get())/4}", "mm", "-" ])
+    elif h_type.get() == 2:
+        data_in.append(["Tipo de tampo", "Toro Esférico", "-", "-"])
+        data_in.append(
+            ["Altura do tampo", f"{int(D.get())/3.8}", "mm", "-"])
+    elif h_type.get() == 3:
+        data_in.append(["Tipo de tampo", "Hemisférico", "-", "-"])
+        data_in.append(
+            ["Altura do tampo", f"{int(D.get())/2}", "mm", "-"])
+    elif h_type.get() == 4:
+        data_in.append(["Tipo de tampo", "Cônico", "-", "-"])
+    else:
+        data_in.append(["Tipo de tampo", "Toro Cônico", "-", "-"])
+    
+    if h_type.get() > 3:
+        if not check_float_field(H, "Altura do tampo"):
+            return
+        data_in.append(
+            ["Altura do tampo", f"{H.get()}", "mm", "-"])
+        
+        if h_type.get() == 5:
+            if not check_float_field(Di,"Diâmetro final do tampo"):
+                return
+            data_in.append(["Diâmetro final do tampo", f"{Di.get()}", "mm", "-"])
+    
+    if not check_mat_field(head_mat, "Material do tampo"):
+        return
+    data_in.append(["Material do tampo", head_mat.get(), "-", "-"])
+
+    if not check_fluid_field(fluid, "Fluido"):
+        return
+    data_in.append(["Fluido", fluid.get(), "-", "-"])
+
+    if not check_float_field(fluid_level,"Nivel do fluido"):
+        return
+    data_in.append(["Nivel do Fluido",f"{fluid_level.get()}%","-","-"])
+
+
+    data_out = [["Característica", "Valor", "Unidade", ]]
+
+    frame_res = root.create_LabelFrame(
+        "Resultados", 0, 2, 2, padxint=10, padyint=10, rowspanint=15)
+    list_of_res.append(frame_res)
+
+
+    # Puxando os dados dos campos
+
+    P = float(P.get())
+    E = float(E.get())
+    D = float(D.get())
     R = D/2
+    S = get_mat_tension(shell_mat)
+    Sh = get_mat_tension(head_mat)
+    L = float(L.get())
+    UL= int(UF.get())
+    h_type = h_type.get()
+    if h_type == 1:
+        H = D/4
+    elif h_type == 2:
+        H = D/3.8
+    elif h_type == 3:
+        H = R
+    elif h_type == 4:
+        H = float(H.get())
+    elif h_type==5:
+        H = float(H.get())
+
+    # La = float(saddle_A.get())
+    # Sa = float(saddle_angle.get())
+
+    
     try:
         circun_stress = circunferencial_stress(P,S,E,R)
-    except ValueError:
-        return ##Alerta tkinter
+    except ValueError as e:
+        return messagebox.showerror("Erro!",str(e))
     
     try:
         long_stress = longitudinal_stress(P,S,E,R)
-    except ValueError:
-        return ## Alerta tkinter
+    except ValueError as e:
+        return messagebox.showerror("Erro!",str(e))
+    
+    if Cor.get():
+        corr = float(Cor.get())
+    else:
+        if get_fluid_type(fluid) == True:
+            corr = 6
+        else:
+            corr = 0.127*UL
+
     
 
     #Rever norma sobre corrosão
-    shell_t = max(circun_stress,long_stress) + 6 # Pegando o maximo e adicionando a sobreespessura de corrosão
+    shell_t = max(circun_stress,long_stress) + corr # Pegando o maximo e adicionando a sobreespessura de corrosão
 
     if h_type == 1:
         head_t = elipsoidal_head(P,D,Sh,E)
@@ -114,19 +245,46 @@ def calculate(P,S,L,E,D,h_type,Sh,H,Dh):
     elif h_type == 4:
         try:
             head_t = conical_head(H,D,P,Sh,E)
-        except ValueError:
-            return ## Alerta tkinter
-    # elif h_type == 5: Não usando tampo toro conico por enquanto
+        except ValueError as e:
+            return messagebox.showerror("Erro!",str(e))
+    elif h_type == 5:
+        try:
+            head_t = toroconical_head(Di,D,H,P,Sh,E)
+        except ValueError as e:
+            return messagebox.showerror("Erro!",str(e))
 
-    total_w = shell_weight(R, L, shell_t, mat_den, fluid_den, fluid_level) + head_weight(h_type,D,head_t,fluid_den,fluid_level,mat_den,H)  # Criar DB para fluídos
 
-    Q = total_w/2
+    head_t += corr
+    # total_w = shell_weight(R, L, shell_t, mat_den, fluid_den, fluid_level) + head_weight(h_type,D, Di, head_t,fluid_den,fluid_level,mat_den,H)
 
+    # Q = total_w/2
+
+
+
+    #########################
+    data_out.append(["Espessura mínima do casco",
+                    f"{shell_t:.3f}", "mm", "-" ])
+    
+    shell_thick_label = frame_res.create_Label(
+        "Espessura do casco:", 1, 3, stickystr='W')
+    list_of_res.append(shell_thick_label)
+
+    shell_thick_res = frame_res.create_Label(
+        f'{shell_t:.3f} mm', 1, 4, stickystr='W')
+    list_of_res.append(shell_thick_res)
+
+    data_out.append(["Espessura mínima do tampo",
+                    f"{head_t:.3f}", "mm", "-"])
+    head_thick_label = frame_res.create_Label(
+        "Espessura do tampo:", 2, 3, stickystr='W')
+    list_of_res.append(head_thick_label)
+
+    head_thick_res = frame_res.create_Label(
+        f'{head_t:.3f} mm', 2, 4, stickystr='W')
+    list_of_res.append(head_thick_res)
 
     print(shell_t) # Apagar depois, somente checando valor
+    print(head_t)
 
 
-
-
-
-calculate(10,82.7,1,1000)
+# calculate(10,82.7,1,1000)

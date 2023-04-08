@@ -103,6 +103,9 @@ class GUI():
             name.grid(row=rowint, column=columnint, columnspan=columnspanint,
                       sticky=stickystr, padx=padxint, pady=padyint)
         return name
+    
+    def destroy(self):
+        self.window.destroy()
 
 
 
@@ -308,9 +311,58 @@ def show_head_height(head_height_entry, show,end_diam_entry,show2=False):
     if show == True:
         head_height_entry.config(state="normal")
     else:
+        head_height_entry.delete(0, tk.END)
         head_height_entry.config(state="disabled")
     if show2:
         end_diam_entry.config(state="normal")
     else:
+        end_diam_entry.delete(0,tk.END)
         end_diam_entry.config(state="disabled")
-    
+
+def get_mat_tension(nome):
+    conn = sqlite3.connect('storage2.db')
+    cursor1 = conn.cursor()
+    cursor1.execute(
+        f"SELECT adm_tension FROM materials_list WHERE mat_name='{nome.get()}'")
+    ret = cursor1.fetchall()
+    conn.commit()
+    conn.close()
+    if len(ret) != 1:
+        return None
+    return ret[0][0]
+
+def check_mat_field(field, nome):
+    if get_mat_tension(field) == None:
+        messagebox.showinfo("Erro", f"{nome} está vazio")
+        return False
+    return True
+
+def get_fluid_den(nome):
+    conn = sqlite3.connect('storage2.db')
+    cursor1 = conn.cursor()
+    cursor1.execute(
+        f"SELECT fluid_den FROM fluids_list WHERE fluid_name='{nome.get()}'")
+    ret = cursor1.fetchall()
+    conn.commit()
+    conn.close()
+    if len(ret) != 1:
+        return None
+    return ret[0][0]
+
+def get_fluid_type(nome):
+    conn = sqlite3.connect('storage2.db')
+    cursor1 = conn.cursor()
+    cursor1.execute(
+        f"SELECT fluid_type FROM fluids_list WHERE fluid_name='{nome.get()}'")
+    ret = cursor1.fetchall()
+    conn.commit()
+    conn.close()
+    if len(ret) != 1:
+        return None
+    return ret[0][0]
+
+def check_fluid_field(field, nome):
+    if get_fluid_den(field) == None:
+        messagebox.showinfo("Erro", f"{nome} está vazio")
+        return False
+    return True    
