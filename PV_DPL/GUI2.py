@@ -3,6 +3,8 @@ import tkinter.ttk as ttk
 from tkinter import messagebox
 from enum import Enum
 import sqlite3
+from create_pdf import create_pdf
+
 
 class WindowType(Enum):
     main = 1
@@ -19,7 +21,7 @@ class GUI():
     def __init__(
             self, window_type, title = None, 
             frame = None, mat_window = None,
-            fluid_window = None, 
+            fluid_window = None, res_window = None,
             ) -> None:
 
         if window_type == WindowType.main:
@@ -34,10 +36,10 @@ class GUI():
                 label="Editar database de fluidos",
                 command=fluid_window
             )
-            # filemenu.add_command(
-            #     label="Ver histórico de resultados",
-            #     command=res_window
-            # )
+            filemenu.add_command(
+                label="Ver histórico de resultados",
+                command=res_window
+            )
             filemenu.add_separator()
             filemenu.add_command(
                 label="Sair",
@@ -331,6 +333,18 @@ def get_mat_tension(nome):
         return None
     return ret[0][0]
 
+def get_mat_den(nome):
+    conn = sqlite3.connect('storage2.db')
+    cursor1 = conn.cursor()
+    cursor1.execute(
+        f"SELECT mat_den FROM materials_list WHERE mat_name='{nome.get()}'")
+    ret = cursor1.fetchall()
+    conn.commit()
+    conn.close()
+    if len(ret) != 1:
+        return None
+    return ret[0][0]
+
 def check_mat_field(field, nome):
     if get_mat_tension(field) == None:
         messagebox.showinfo("Erro", f"{nome} está vazio")
@@ -366,3 +380,82 @@ def check_fluid_field(field, nome):
         messagebox.showinfo("Erro", f"{nome} está vazio")
         return False
     return True    
+
+def delete_res(id_entry, frame, list):
+    if check_int_field(id_entry, "O ID"):
+        conn = sqlite3.connect('storage2.db')
+        c = conn.cursor()
+        c.execute("DELETE from results WHERE oid= :id_entry", {
+            'id_entry': id_entry.get()
+        })
+        c.execute("SELECT *, oid FROM results")
+        records = c.fetchall()
+        i = 1
+        clearGrid(list)
+        for results in records:
+
+            res = frame.create_Label(results[0],i,0)
+            id = frame.create_Label(results[19],i,1)
+            list.append(res)
+            list.append(id)
+            i += 1
+        conn.commit()
+        conn.close()
+        id_entry.delete(0, tk.END)
+
+def pdf_res(id_entry):
+    print_config = [[],
+                    ["Diâmetro do Casco", "mm"],
+                    ["Comprimento do Casco", "mm"],
+                    ["Pressão de Projeto", "MPa"],
+                    ["Vida util", "anos"],
+                    ["Sobreespessura de corrosão", "mm"],
+                    ["Eficiência de Junta", "-"],
+                    ["Material do Casco", "-"],
+                    ["Tipo de Tampo", "-"],
+                    ["Altura do tampo", "mm"],
+                    ["Diâmetro final do tampo", "mm"],
+                    ["Material do Tampo", "-"],
+                    ["Fluido", "-"],
+                    ["Nível de fluido","%"],
+                    ["Distância (A) do suporte", "mm"],
+                    ["Ânguldo do suporte","Graus"],
+                    ["Largura do suporte", "mm"],
+                    ["Espessura mínima do tampo", "mm"],
+                    ["Espessura mínima do casco", "mm"]
+                    ]
+    if check_int_field(id_entry, "O ID"):
+        data_in = [["Característica", "Valor", "Unidade", ]]
+        data_out = [["Característica", "Valor", "Unidade", ]]
+        conn = sqlite3.connect('storage.db')
+        c = conn.cursor()
+        c.execute("SELECT * from results WHERE oid= :id_entry", {
+            'id_entry': id_entry.get()
+        })
+        records = c.fetchall()
+        conn.commit()
+        conn.close()
+        name = records[0][0]
+        for i in range(1, 17):
+            carac = print_config[i][0]
+            parameter = records[0][i]
+            if parameter == None:
+                parameter = "-"
+            else:
+                if isfloat(parameter):
+                    parameter = str(parameter)
+                elif isInt(parameter):
+                    parameter = str(parameter)
+            unit = print_config[i][1]
+            data_in.append([carac, parameter, unit])
+        for i in range(17, 19):
+            carac = print_config[i][0]
+            parameter = records[0][i]
+            if parameter == None:
+                parameter = "-"
+            else:
+                if isfloat(parameter):
+                    parameter = str(parameter)
+            unit = print_config[i][1]
+            data_out.append([carac, parameter, unit])
+        create_pdf(name, data_in, data_out)

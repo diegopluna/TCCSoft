@@ -1,12 +1,13 @@
 from GUI2 import *
 from mat_window import *
 from fluid_window import *
+from res_window import *
 from calc2 import *
 
 
 if __name__ == '__main__':
 
-    root = GUI(WindowType.main, "PV_DPL", mat_window=mat_window, fluid_window=fluid_window)
+    root = GUI(WindowType.main, "PV_DPL", mat_window=mat_window, fluid_window=fluid_window, res_window=res_window)
 
     input_frame = root.create_LabelFrame(
         "Dados de Entrada", padxint=10, padyint=10,rowint=0,columnint=0)
@@ -93,10 +94,14 @@ if __name__ == '__main__':
     saddle_angle_150 = input_frame.create_RadioButton(
         "150°", saddle_angle, 150, None, 20, 1, stickystr="W")
     
+    saddle_width_label = input_frame.create_Label(
+        "Largura do suporte(mm):", 20, 0, stickystr='W')
+    saddle_width_input = input_frame.create_Entry(21, 1, stickystr='W')
+    
 
     opt_label = root.create_Label("*Opcional, se deixado em branco será considerado:\n 0.127mm por ano de vida útil para fluidos básicos,\n 6mm ao longo da vida para fluidos agressivos.",rowint=1,columnint=0,stickystr='W')
 
-    calc_button = root.create_Button("Calcular",rowint=2,columnspanint=2,ipadxint=100,padyint=10, commandf= lambda: calculate(root, list_of_res,proj_name_input, diam_input, length_input, pressure_input,vessel_life_entry, corrosion_entry, weld_efficiency_input, shell_material_combobox, head, head_height_entry, end_diam_entry, head_material_combobox, fluid_combobox, fluid_level_entry))
+    calc_button = root.create_Button("Calcular",rowint=2,columnspanint=2,ipadxint=100,padyint=10, commandf= lambda: calculate(root, list_of_res,proj_name_input, diam_input, length_input, pressure_input,vessel_life_entry, corrosion_entry, weld_efficiency_input, shell_material_combobox, head, head_height_entry, end_diam_entry, head_material_combobox, fluid_combobox, fluid_level_entry, saddle_A_input, saddle_angle, saddle_width_input))
 
     list_of_res = []
 

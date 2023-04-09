@@ -67,7 +67,7 @@ def toroconical_head(Di, D, H, P, S, E):
 #Suportes
 def head_weight(h_type,D, Di, head_t,fluid_den, fluid_level, mat_den, H):
     R = D/2
-    Ri = Di/2
+    
     if h_type == 1:
         inside_head_v = (math.pi * pow(D,3))/12
         outside_head_v = (math.pi * pow(D+2*head_t,3))/12
@@ -81,6 +81,7 @@ def head_weight(h_type,D, Di, head_t,fluid_den, fluid_level, mat_den, H):
         inside_head_v = 2*(math.pi *R*R*H)/3
         outside_head_v = 2*(math.pi *pow(R+head_t,2)*(H+head_t))/3
     elif h_type == 5:
+        Ri = Di/2
         inside_head_v = 2*(math.pi*H/3)*(math.pow(R,2)+ R*Ri + math.pow(Ri,2))
         outside_head_v = 2*(math.pi*(H+head_t)/3)*(math.pow(R+head_t,2) + (R+head_t)*(Ri+head_t) + math.pow(Ri+head_t,2))
     fluid_w = fluid_den * inside_head_v * fluid_level
@@ -103,7 +104,7 @@ def shell_weight(R, L,shell_t,mat_den,fluid_den,fluid_level):
 
 
 
-def calculate(root, list_of_res, name, D, L, P, UF, Cor, E, shell_mat, h_type, H, Di, head_mat, fluid, fluid_level):
+def calculate(root, list_of_res, name, D, L, P, UF, Cor, E, shell_mat, h_type, H, Di, head_mat, fluid, fluid_level, A, Sa, B):
 
     clearGrid(list_of_res)
     data_in = [["Característica", "Valor", "Unidade", "Observação" ]]
@@ -130,6 +131,8 @@ def calculate(root, list_of_res, name, D, L, P, UF, Cor, E, shell_mat, h_type, H
         if not check_float_field(Cor, "Sobreespessura de corrosão"):
             return
         data_in.append(["Sobreespessura de corrosão", f"{Cor.get()}", "mm", "Especificado pelo usuário"])
+    else:
+        data_in.append(["-","-","-","-"])
     
     if not check_float_field(E, "Eficiência de junta"):
         return
@@ -179,8 +182,17 @@ def calculate(root, list_of_res, name, D, L, P, UF, Cor, E, shell_mat, h_type, H
         return
     data_in.append(["Nivel do Fluido",f"{fluid_level.get()}%","-","-"])
 
+    if not check_float_field(A, "Distância (A) do suporte"):
+        return
+    data_in.append(["Distância (A) do suporte", f"{A.get()}", "mm","-"])
 
-    data_out = [["Característica", "Valor", "Unidade", ]]
+    data_in.append(["Ângulo do suporte", f"{Sa.get()}", "Graus", "-"])
+
+    if not check_float_field(B, "Largura do suporte"):
+        return
+    data_in.append(["Largura do suporte", f"{B.get()}", "mm","-"])
+
+    data_out = [["Característica", "Valor", "Unidade", "Observação"]]
 
     frame_res = root.create_LabelFrame(
         "Resultados", 0, 2, 2, padxint=10, padyint=10, rowspanint=15)
@@ -198,6 +210,9 @@ def calculate(root, list_of_res, name, D, L, P, UF, Cor, E, shell_mat, h_type, H
     L = float(L.get())
     UL= int(UF.get())
     h_type = h_type.get()
+    A = float(A.get())
+    Sa = Sa.get()
+    B = float(B.get())
     if h_type == 1:
         H = D/4
     elif h_type == 2:
@@ -208,9 +223,7 @@ def calculate(root, list_of_res, name, D, L, P, UF, Cor, E, shell_mat, h_type, H
         H = float(H.get())
     elif h_type==5:
         H = float(H.get())
-
-    # La = float(saddle_A.get())
-    # Sa = float(saddle_angle.get())
+        Di = float(Di.get())
 
     
     try:
@@ -231,9 +244,8 @@ def calculate(root, list_of_res, name, D, L, P, UF, Cor, E, shell_mat, h_type, H
         else:
             corr = 0.127*UL
 
-    
+    data_in[5] = (["Sobreespessura de corrosão", f"{corr}", "mm", "Usuário não especificou, dado calculado"])
 
-    #Rever norma sobre corrosão
     shell_t = max(circun_stress,long_stress) + corr # Pegando o maximo e adicionando a sobreespessura de corrosão
 
     if h_type == 1:
@@ -254,13 +266,67 @@ def calculate(root, list_of_res, name, D, L, P, UF, Cor, E, shell_mat, h_type, H
             return messagebox.showerror("Erro!",str(e))
 
 
+
     head_t += corr
-    # total_w = shell_weight(R, L, shell_t, mat_den, fluid_den, fluid_level) + head_weight(h_type,D, Di, head_t,fluid_den,fluid_level,mat_den,H)
 
-    # Q = total_w/2
+    #######
+    H0 = H + head_t
+    Lss = L - 2*A
+    Lt = L + 2*H0
+    shell_mat_den = get_mat_den(shell_mat)
+    head_mat_den = get_mat_den(head_mat)
+    fluid_den = get_fluid_den(fluid)
+    fluid_level = float(fluid_level.get())/100
+    total_w = shell_weight(R, L, shell_t, shell_mat_den, fluid_den, fluid_level) + head_weight(h_type,D, Di, head_t,fluid_den,fluid_level,head_mat_den,H)
+    Q = total_w/2
 
+    if A > R/2:
+        messagebox.showinfo(
+            "Erro", "A distância entre suportes excede os limites da norma")
+        return
+    
+    if Sa == 120:
+        K2=0.880
+        K3=0.0132
+        K4=0.401
+    else:
+        K2=0.485
+        K3=0.0079
+        K4=0.297
+    
+    ##Tensao cisalhante
+    S1 = (P*R)/(2*E*shell_t) #MPa
+    S1s = 0.8 * S1
+    #Tensao cisalhante no costado para A <= R/2
+    S2 = (Q * K2)/(shell_t * R) 
 
-
+    print(S2)
+    print(S1s)
+    if S2/S1s >= 1:
+        messagebox.showinfo(
+            "Erro", "A tensão cisalhante no costado excede a tensão cisalhante admissível")
+        return
+    #Tensao cisalhante nos tampos para A <= R/2
+    S2h = (Q * K2)/(head_t * R)
+    if S2h/S1s >= 1:
+        messagebox.showinfo(
+            "Erro", "A tensão cisalhante no tampo excede a tensão cisalhante admissível")
+        return
+    #Tensao adicional no tampo
+    S3 = (Q * K4)/(head_t * R)
+    if S3/(1.25*S1) >= 1:
+        messagebox.showinfo(
+            "Erro", "A tensão adicional no tampo excede a tensão cisalhante admissível")
+        return
+    
+    if L >= 8*R:
+        S4=-(Q/(4*shell_t*(B+10*shell_t)))-((3*K3*Q)/(2*pow(shell_t,2)))
+    else:
+        S4=-(Q/(4*shell_t*(B+10*shell_t)))-((12*K3*Q*R)/(L*pow(shell_t,2)))
+    
+    if S4 >= 1.5*S1:
+        messagebox.showinfo("Erro","Tensão do suporte excede os limites impostos")
+        return
     #########################
     data_out.append(["Espessura mínima do casco",
                     f"{shell_t:.3f}", "mm", "-" ])
@@ -283,8 +349,7 @@ def calculate(root, list_of_res, name, D, L, P, UF, Cor, E, shell_mat, h_type, H
         f'{head_t:.3f} mm', 2, 4, stickystr='W')
     list_of_res.append(head_thick_res)
 
-    print(shell_t) # Apagar depois, somente checando valor
-    print(head_t)
-
-
-# calculate(10,82.7,1,1000)
+    name = name.get()
+    pdf_button = root.create_Button("Gerar PDF", lambda: create_pdf(
+        name, data_in, data_out), 5, 2, 2, ipadxint=100, padyint=10, padxint=10)
+    list_of_res.append(pdf_button)

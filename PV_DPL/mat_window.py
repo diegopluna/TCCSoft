@@ -19,6 +19,29 @@ CREATE TABLE IF NOT EXISTS fluids_list (
 )
 """)
 
+c.execute("""
+CREATE TABLE IF NOT EXISTS results (
+name text PRIMARY KEY,
+diameter float,
+shell_len float,
+pressure float,
+shell_life int,
+corr_t    float,
+weld_eff float,
+shell_mat text,
+head_type text,
+head_height float,
+end_diam float,
+head_mat text,
+fluid    text,
+fluid_level float,
+saddle_A float,
+saddle_angle int,
+saddle_w float,
+shell_thick float,
+head_thick float
+)
+""")
 conn.commit()
 conn.close()
 
