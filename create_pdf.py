@@ -24,3 +24,5 @@ def create_pdf(nome, data_in, data_out):
             return
     pdf.output(f"{nome}.pdf")
     messagebox.showinfo("Aviso", "Relatório em PDF gerado com sucesso!")
+
+

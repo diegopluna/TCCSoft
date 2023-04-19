@@ -2,6 +2,7 @@ import math
 from GUI2 import *
 from tkinter import messagebox
 from create_pdf import create_pdf
+from res_class import results
 
 # Calculo espessura do casco
 
@@ -225,17 +226,23 @@ def calculate(root, list_of_res, name, D, L, P, UF, Cor, E, shell_mat, h_type, H
         H = float(H.get())
         Di = float(Di.get())
 
-    
+    data_calc=[["Dado Calculado", "Fórmula", "Resultado"]]
+
     try:
         circun_stress = circunferencial_stress(P,S,E,R)
     except ValueError as e:
         return messagebox.showerror("Erro!",str(e))
     
+    data_calc.append(["Espessura do Costado pela tensão circunferencial", "(P*R)/(S*E - 0.6*P)",f"{circun_stress:.3f} mm"])
+
     try:
         long_stress = longitudinal_stress(P,S,E,R)
     except ValueError as e:
         return messagebox.showerror("Erro!",str(e))
     
+    data_calc.append(["Espessura do Costado pela tensão longitudinal", "(P*R)/(2*S*E + 0.4*P)",f"{long_stress:.3f} mm"])
+
+
     if Cor.get():
         corr = float(Cor.get())
     else:
@@ -243,6 +250,8 @@ def calculate(root, list_of_res, name, D, L, P, UF, Cor, E, shell_mat, h_type, H
             corr = 6
         else:
             corr = 0.127*UL
+            data_calc.append(["Sobreespessura de corrosão para líquido não agressivo ", "0.127 * (Vida Útil)",f"{corr:.3f} mm"])
+
 
     data_in[5] = (["Sobreespessura de corrosão", f"{corr}", "mm", "Usuário não especificou, dado calculado"])
 
@@ -250,18 +259,23 @@ def calculate(root, list_of_res, name, D, L, P, UF, Cor, E, shell_mat, h_type, H
 
     if h_type == 1:
         head_t = elipsoidal_head(P,D,Sh,E)
+        data_calc.append(["Espessura do tampo", "(P*D)/(2*S*E-0.2*P)",f"{head_t:.3f} mm"])
     elif h_type == 2:
         head_t = torospherical_head(P,D,Sh,E)
+        data_calc.append(["Espessura do tampo", "(0.885*P*L)/(S*E - 0.1*P)",f"{head_t:.3f} mm"])
     elif h_type == 3:
         head_t = hemispheric_head(P,R,Sh,E)
+        data_calc.append(["Espessura tampo", "(P*L)/(2*S*E - 0.2*P)",f"{head_t:.3f} mm"])
     elif h_type == 4:
         try:
             head_t = conical_head(H,D,P,Sh,E)
+            data_calc.append(["Espessura tampo", "(P*D)/(2*cos_alpha(S*E - 0.6*P))",f"{head_t:.3f} mm"])
         except ValueError as e:
             return messagebox.showerror("Erro!",str(e))
     elif h_type == 5:
         try:
             head_t = toroconical_head(Di,D,H,P,Sh,E)
+            data_calc.append(["Espessura tampo", "(P*L)/(S*E - 0.6*P)",f"{head_t:.3f} mm"])
         except ValueError as e:
             return messagebox.showerror("Erro!",str(e))
 
@@ -351,5 +365,23 @@ def calculate(root, list_of_res, name, D, L, P, UF, Cor, E, shell_mat, h_type, H
 
     name = name.get()
     pdf_button = root.create_Button("Gerar PDF", lambda: create_pdf(
-        name, data_in, data_out), 5, 2, 2, ipadxint=100, padyint=10, padxint=10)
+        name, data_in, data_out, data_calc), 5, 2, 2, ipadxint=100, padyint=10, padxint=10)
+    # calc_pdf_button = root.create_Button("Gerar folha de cálculo", lambda: create_calc(name, data_calc),6, 2, 2, ipadxint=100, padyint=10, padxint=10)
     list_of_res.append(pdf_button)
+
+    if h_type == 5:
+        h_name = "Toro Cônico"
+        x = results(name,D,L,P,UL,corr,E,S,h_name,H,None,Sh,fluid_den,fluid_level*100,A,Sa,B,shell_t,head_t)
+    elif h_type == 4:
+        h_name = "Cônico"
+        x = results(name,D,L,P,UL,corr,E,S,h_name,H,None,Sh,fluid_den,fluid_level*100,A,Sa,B,shell_t,head_t)
+    elif h_type == 3:
+        h_name = "Hemisférico"
+        x = results(name,D,L,P,UL,corr,E,S,h_name,H,None,Sh,fluid_den,fluid_level*100,A,Sa,B,shell_t,head_t)
+    elif h_type == 2:
+        h_name = "Toro Esférico"
+        x = results(name,D,L,P,UL,corr,E,S,h_name,H,None,Sh,fluid_den,fluid_level*100,A,Sa,B,shell_t,head_t)
+    else:
+        h_name = "Elipsoidal 2:1"
+        x = results(name,D,L,P,UL,corr,E,S,h_name,H,None,Sh,fluid_den,fluid_level*100,A,Sa,B,shell_t,head_t)
+    x.save()

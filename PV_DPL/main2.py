@@ -95,7 +95,7 @@ if __name__ == '__main__':
         "150°", saddle_angle, 150, None, 20, 1, stickystr="W")
     
     saddle_width_label = input_frame.create_Label(
-        "Largura do suporte(mm):", 20, 0, stickystr='W')
+        "Largura do suporte(mm):", 21, 0, stickystr='W')
     saddle_width_input = input_frame.create_Entry(21, 1, stickystr='W')
     
 

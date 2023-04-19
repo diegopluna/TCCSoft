@@ -427,7 +427,7 @@ def pdf_res(id_entry):
     if check_int_field(id_entry, "O ID"):
         data_in = [["Característica", "Valor", "Unidade", ]]
         data_out = [["Característica", "Valor", "Unidade", ]]
-        conn = sqlite3.connect('storage.db')
+        conn = sqlite3.connect('storage2.db')
         c = conn.cursor()
         c.execute("SELECT * from results WHERE oid= :id_entry", {
             'id_entry': id_entry.get()

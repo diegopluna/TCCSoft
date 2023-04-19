@@ -3,7 +3,7 @@ from tkinter import messagebox
 import os.path
 import os
 
-def create_pdf(nome, data_in, data_out):
+def create_pdf(nome, data_in, data_out, data_calc=None):
 
     pdf = PDF()
     pdf.add_page()
@@ -15,6 +15,10 @@ def create_pdf(nome, data_in, data_out):
     pdf.create_table(table_data=data_out,
                      title='Dados Calculados', cell_width='even')
     pdf.ln()
+    if data_calc is not None:
+        pdf.create_table(table_data=data_calc,
+                        title='Folha de cálculo', cell_width='even')
+        pdf.ln()
     if os.path.isfile(f"{nome}.pdf"):
         res = messagebox.askquestion(
             "Erro", "Já existe um arquivo com este nome, deseja sobreescrever?")
@@ -24,3 +28,4 @@ def create_pdf(nome, data_in, data_out):
             return
     pdf.output(f"{nome}.pdf")
     messagebox.showinfo("Aviso", "Relatório em PDF gerado com sucesso!")
+
