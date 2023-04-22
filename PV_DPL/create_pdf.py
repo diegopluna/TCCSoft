@@ -12,9 +12,11 @@ def create_pdf(nome, data_in, data_out, data_calc=None):
     pdf.create_table(table_data=data_in,
                      title='Dados de Entrada', cell_width='even')
     pdf.ln()
+    pdf.add_page()
     pdf.create_table(table_data=data_out,
                      title='Dados Calculados', cell_width='even')
     pdf.ln()
+    pdf.add_page()
     if data_calc is not None:
         pdf.create_table(table_data=data_calc,
                         title='Folha de cálculo', cell_width='even')

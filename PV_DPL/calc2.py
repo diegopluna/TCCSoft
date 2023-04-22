@@ -4,6 +4,8 @@ from tkinter import messagebox
 from create_pdf import create_pdf
 from res_class import results
 
+data_calc=[["Dado Calculado", "Fórmula", "Resultado"]]
+
 # Calculo espessura do casco
 
 ##Tensão Circunferencial
@@ -67,41 +69,50 @@ def toroconical_head(Di, D, H, P, S, E):
 
 #Suportes
 def head_weight(h_type,D, Di, head_t,fluid_den, fluid_level, mat_den, H):
+    D = D/1000
+    Di = Di/1000
+    fluid_level = fluid_level/100
     R = D/2
+    head_t =head_t/1000
+    H = H/1000
     
     if h_type == 1:
-        inside_head_v = (math.pi * pow(D,3))/12
-        outside_head_v = (math.pi * pow(D+2*head_t,3))/12
+        inside_head_v = (math.pi * pow(D,3))/12 #m3
+        outside_head_v = (math.pi * pow(D+2*head_t,3))/12 #m3
     elif h_type == 2:
-        inside_head_v = 0.1694 * pow(D,3)
-        outside_head_v = 0.1694 * pow(D+2*head_t,3)
+        inside_head_v = 0.1694 * pow(D,3) #m3
+        outside_head_v = 0.1694 * pow(D+2*head_t,3) #m3
     elif h_type == 3:
-        inside_head_v = (4*math.pi * pow(R,3))/3
-        outside_head_v = (4*math.pi * pow(R+head_t,3))/3
+        inside_head_v = (4*math.pi * pow(R,3))/3 #m3
+        outside_head_v = (4*math.pi * pow(R+head_t,3))/3 #m3
     elif h_type == 4:
-        inside_head_v = 2*(math.pi *R*R*H)/3
-        outside_head_v = 2*(math.pi *pow(R+head_t,2)*(H+head_t))/3
+        inside_head_v = 2*(math.pi *R*R*H)/3 #m3
+        outside_head_v = 2*(math.pi *pow(R+head_t,2)*(H+head_t))/3 #m3
     elif h_type == 5:
         Ri = Di/2
-        inside_head_v = 2*(math.pi*H/3)*(math.pow(R,2)+ R*Ri + math.pow(Ri,2))
-        outside_head_v = 2*(math.pi*(H+head_t)/3)*(math.pow(R+head_t,2) + (R+head_t)*(Ri+head_t) + math.pow(Ri+head_t,2))
-    fluid_w = fluid_den * inside_head_v * fluid_level
-    mat_w = (outside_head_v - inside_head_v) * mat_den
-    head_w = fluid_w + mat_w
-    return head_w
+        inside_head_v = 2*(math.pi*H/3)*(math.pow(R,2)+ R*Ri + math.pow(Ri,2)) #m3
+        outside_head_v = 2*(math.pi*(H+head_t)/3)*(math.pow(R+head_t,2) + (R+head_t)*(Ri+head_t) + math.pow(Ri+head_t,2)) #m3
+    fluid_w = fluid_den * inside_head_v * fluid_level * 9.81 #N
+    mat_w = (outside_head_v - inside_head_v) * mat_den * 9.81 #N
+    head_w = fluid_w + mat_w #N
+    return head_w #N
 
 
 def shell_weight(R, L,shell_t,mat_den,fluid_den,fluid_level):
-    inside_base_area = math.pi * math.pow(R,2)
-    inside_v = inside_base_area * L
-    out_r = R + shell_t
-    outside_base_area = math.pi * math.pow(out_r,2)
-    outside_v = outside_base_area * L
-    shell_v = outside_v - inside_v
-    mat_w = shell_v * mat_den
-    fluid_w = inside_v*fluid_den*fluid_level
-    shell_w = mat_w + fluid_w
-    return shell_w
+    R = R/1000
+    shell_t = shell_t/1000
+    L = L/1000
+    fluid_level = fluid_level/100
+    inside_base_area = math.pi * math.pow(R,2) #m2
+    inside_v = inside_base_area * L #m3
+    out_r = R + shell_t #m
+    outside_base_area = math.pi * math.pow(out_r,2) #m2
+    outside_v = outside_base_area * L #m3
+    shell_v = outside_v - inside_v #m3
+    mat_w = shell_v * mat_den * 9.81 # N
+    fluid_w = inside_v*fluid_den*9.81*fluid_level #N
+    shell_w = mat_w + fluid_w # N
+    return shell_w #N
 
 
 
@@ -214,6 +225,8 @@ def calculate(root, list_of_res, name, D, L, P, UF, Cor, E, shell_mat, h_type, H
     A = float(A.get())
     Sa = Sa.get()
     B = float(B.get())
+    if len(Di.get()) == 0:
+        Di = 0
     if h_type == 1:
         H = D/4
     elif h_type == 2:
@@ -226,7 +239,7 @@ def calculate(root, list_of_res, name, D, L, P, UF, Cor, E, shell_mat, h_type, H
         H = float(H.get())
         Di = float(Di.get())
 
-    data_calc=[["Dado Calculado", "Fórmula", "Resultado"]]
+    # data_calc=[["Dado Calculado", "Fórmula", "Resultado"]]
 
     try:
         circun_stress = circunferencial_stress(P,S,E,R)
@@ -245,15 +258,15 @@ def calculate(root, list_of_res, name, D, L, P, UF, Cor, E, shell_mat, h_type, H
 
     if Cor.get():
         corr = float(Cor.get())
+        data_in[5] = (["Sobreespessura de corrosão", f"{corr}", "mm", "Especificada pelo usuário"])
     else:
         if get_fluid_type(fluid) == True:
             corr = 6
         else:
             corr = 0.127*UL
             data_calc.append(["Sobreespessura de corrosão para líquido não agressivo ", "0.127 * (Vida Útil)",f"{corr:.3f} mm"])
+        data_in[5] = (["Sobreespessura de corrosão", f"{corr}", "mm", "Usuário não especificou, dado calculado"])
 
-
-    data_in[5] = (["Sobreespessura de corrosão", f"{corr}", "mm", "Usuário não especificou, dado calculado"])
 
     shell_t = max(circun_stress,long_stress) + corr # Pegando o maximo e adicionando a sobreespessura de corrosão
 
@@ -284,15 +297,15 @@ def calculate(root, list_of_res, name, D, L, P, UF, Cor, E, shell_mat, h_type, H
     head_t += corr
 
     #######
-    H0 = H + head_t
+    H0 = H + head_t#
     Lss = L - 2*A
     Lt = L + 2*H0
-    shell_mat_den = get_mat_den(shell_mat)
-    head_mat_den = get_mat_den(head_mat)
-    fluid_den = get_fluid_den(fluid)
-    fluid_level = float(fluid_level.get())/100
-    total_w = shell_weight(R, L, shell_t, shell_mat_den, fluid_den, fluid_level) + head_weight(h_type,D, Di, head_t,fluid_den,fluid_level,head_mat_den,H)
-    Q = total_w/2
+    shell_mat_den = get_mat_den(shell_mat)#
+    head_mat_den = get_mat_den(head_mat)#
+    fluid_den = get_fluid_den(fluid)#
+    fluid_level = float(fluid_level.get())#
+    total_w = shell_weight(R, L, shell_t, shell_mat_den, fluid_den, fluid_level) + head_weight(h_type,D, Di, head_t,fluid_den,fluid_level,head_mat_den,H) #N
+    Q = total_w/2 #N
 
     if A > R/2:
         messagebox.showinfo(
@@ -300,47 +313,71 @@ def calculate(root, list_of_res, name, D, L, P, UF, Cor, E, shell_mat, h_type, H
         return
     
     if Sa == 120:
+        K1 = 1
         K2=0.880
         K3=0.0132
         K4=0.401
     else:
+        K1 = 1
         K2=0.485
         K3=0.0079
         K4=0.297
     
     ##Tensao cisalhante
-    S1 = (P*R)/(2*E*shell_t) #MPa
-    S1s = 0.8 * S1
-    #Tensao cisalhante no costado para A <= R/2
-    S2 = (Q * K2)/(shell_t * R) 
+    S1 = (3*K1*Q*(L/1000))/(math.pi*pow((R/1000),2)*shell_t/1000)
+    S1 = S1/1000000
+    data_calc.append(["Tensão longitudinal máxima devido à flexão", "3*K1*Q*L/(pi * r^2*t)",f"{S1:.3f} MPa"])
 
-    print(S2)
-    print(S1s)
-    if S2/S1s >= 1:
+    if S1 > S*E:
         messagebox.showinfo(
-            "Erro", "A tensão cisalhante no costado excede a tensão cisalhante admissível")
+            "Erro", "A tensão longitudinal máxima excede o valor de Eficiência de Solda * Tensão Admissível")
         return
-    #Tensao cisalhante nos tampos para A <= R/2
-    S2h = (Q * K2)/(head_t * R)
-    if S2h/S1s >= 1:
+    
+    #Tensao cisalhante no costado para A <= R/2
+    S2 = (Q * K2)/((shell_t/1000) * (R/1000))
+    S2 = S2/1000000 
+    data_calc.append(["Tensão tangencial máxima de cisalhamento devido à flexão no casco", "K2*Q/(r*t)",f"{S2:.3f} MPa"])
+    #Tensao cisalhante no tampo para A <= R/2
+    S2h = (Q * K2)/((head_t/1000) * (R/1000)) 
+    S2h = S2h/1000000 #Convertendo N/mm2 para MPa
+    data_calc.append(["Tensão tangencial máxima de cisalhamento devido à flexão no tampo", "K2*Q/(r*t)",f"{S2h:.3f} MPa"])
+
+
+    if S2/(S*0.8) > 1:
         messagebox.showinfo(
-            "Erro", "A tensão cisalhante no tampo excede a tensão cisalhante admissível")
+            "Erro", "A tensão tangencial máxima de cisalhamento devido à flexão no casco excede os limites estabelecidos por Zick")
         return
-    #Tensao adicional no tampo
-    S3 = (Q * K4)/(head_t * R)
-    if S3/(1.25*S1) >= 1:
+    if S2h/(Sh*0.8) > 1:
         messagebox.showinfo(
-            "Erro", "A tensão adicional no tampo excede a tensão cisalhante admissível")
+            "Erro", "A tensão tangencial máxima de cisalhamento devido à flexão no tampo excede os limites estabelecidos por Zick")
         return
     
     if L >= 8*R:
-        S4=-(Q/(4*shell_t*(B+10*shell_t)))-((3*K3*Q)/(2*pow(shell_t,2)))
+        S3=-(Q/(4*(shell_t/1000)*((B/1000)+10*(shell_t/1000))))-((3*K3*Q)/(2*pow(shell_t/1000,2)))
+        S3 = S3/1000000
+        data_calc.append(["Tensão circunferencial máxima combinada", "-(Q/(4*t*(B+10*t)))-((3*K3*Q)/((2 * t^2))",f"{S3:.3f} MPa"])
     else:
-        S4=-(Q/(4*shell_t*(B+10*shell_t)))-((12*K3*Q*R)/(L*pow(shell_t,2)))
+        S3=-(Q/(4*(shell_t/1000)*((B/1000)+10*(shell_t/1000))))-((12*K3*Q*(R/1000))/(((L/1000))*pow(shell_t/1000,2)))
+        S3 = S3/1000000
+        data_calc.append(["Tensão circunferencial máxima combinada", "-(Q/(4*t*(B+10*t)))-((12*K3*Q*R)/((L * t^2))",f"{S3:.3f} MPa"])
     
-    if S4 >= 1.5*S1:
-        messagebox.showinfo("Erro","Tensão do suporte excede os limites impostos")
+    if S3 >= 1.5*S:
+        messagebox.showinfo("Erro","Tensão circunferencial máxima combinada excede os limites estabelecidos por Zick")
         return
+    
+
+    
+    #Tensao adicional no tampo
+    S4 = (Q * K4)/((head_t/1000) * (R/1000))
+    Sadd = (P*R)/(2*E*shell_t)
+    S4 = S4/1000000
+    if (S4 + Sadd)/(1.25*Sh) > 1:
+        messagebox.showinfo(
+            "Erro", "A tensão adicional no tampo excede os limites estabelecidos por Zick")
+        return
+    data_calc.append(["Tensão adicional no tampo", "K4*Q/(r*t)",f"{S4:.3f} MPa"])
+    data_calc.append(["Tensão devido a pressão interna", "P*r/(2*E*t)",f"{Sadd:.3f} MPa"])
+    
     #########################
     data_out.append(["Espessura mínima do casco",
                     f"{shell_t:.3f}", "mm", "-" ])

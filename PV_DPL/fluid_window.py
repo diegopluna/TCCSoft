@@ -17,7 +17,7 @@ def fluid_window():
     fluid_type_1 = fluid_window.create_RadioButton("Básico",fluid_type,False,rowint=2,columnint=1)
     fluid_type_2 = fluid_window.create_RadioButton("Agressivo",fluid_type,True,rowint=3,columnint=1)
 
-    fluid_window.create_Label("Densidade do fluido(kg/mm3):", 4, 0, stickystr='W')
+    fluid_window.create_Label("Densidade do fluido(kg/m3):", 4, 0, stickystr='W')
     fluid_den_entry = fluid_window.create_Entry(4, 1, stickystr='W')
 
     fluid_window.create_Button("Adicionar Material", commandf=lambda: submit_fluid(fluid_den_entry,fluid_name_entry,fluid_frame,list_of_widgets,fluid_type), rowint=5, columnspanint=2, ipadxint=100, padyint=10)
@@ -27,7 +27,7 @@ def fluid_window():
     
     fluid_frame.create_Label("Nome", 1, 2, stickystr='W')
     fluid_frame.create_Label("Tipo de fluido", 1, 3, stickystr='W')
-    fluid_frame.create_Label("Densidade(kg/mm3)", 1, 4, stickystr='W')
+    fluid_frame.create_Label("Densidade(kg/m3)", 1, 4, stickystr='W')
     fluid_frame.create_Label("ID", 1, 5, stickystr='W')
 
     fluid_window.create_Label("ID: ", 6, 0, stickystr='W')

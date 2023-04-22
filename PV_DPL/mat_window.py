@@ -63,7 +63,7 @@ def mat_window():
     mat_ten_entry = mat_window.create_Entry(2, 1, stickystr='W')
 
     mat_window.create_Label(
-        "Densidade do Material(kg/mm3):", 3, 0, stickystr='W')
+        "Densidade do Material(kg/m3):", 3, 0, stickystr='W')
     
     mat_den_entry = mat_window.create_Entry(3, 1, stickystr='W')
 
@@ -75,7 +75,7 @@ def mat_window():
     
     mat_frame.create_Label("Nome", 1, 2, stickystr='W')
     mat_frame.create_Label("Tensão Admissível(MPa)", 1, 3, stickystr='W')
-    mat_frame.create_Label("Densidade(kg/mm3)", 1, 4, stickystr='W')
+    mat_frame.create_Label("Densidade(kg/m3)", 1, 4, stickystr='W')
     mat_frame.create_Label("ID", 1, 5, stickystr='W')
 
     mat_window.create_Label("ID: ", 5, 0, stickystr='W')
